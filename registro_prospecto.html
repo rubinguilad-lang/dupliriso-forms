@@ -9,8 +9,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- MSAL.js — Microsoft Authentication Library -->
-<script type="text/javascript" src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
+  <script>if(typeof msal==='undefined'){document.write('<script src="https://unpkg.com/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"><\/script>');}</script>
+  <script>if(typeof msal==='undefined'){document.write('<script src="https://alcdn.msftauth.net/browser/2.38.3/js/msal-browser.min.js"><\/script>');}</script>
 <script>
   // Google Maps
   const GOOGLE_API_KEY = "AIzaSyBxVQV68kEXRHyCzrPl__yHTa8VnpZFeRQ";
