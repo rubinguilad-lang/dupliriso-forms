@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Oportunidad — Dupliriso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- MSAL.js — Microsoft Authentication Library -->
+<script type="text/javascript" src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+
+<script>
+  // Google Maps
+  const GOOGLE_API_KEY = "AIzaSyBxVQV68kEXRHyCzrPl__yHTa8VnpZFeRQ";
+
+  // Webhook de Make
+  const WEBHOOK_URL = "https://hook.us2.make.com/5iu83ed7wcsvlsmy7dbsc9cgejovupnt";
+
+  // Microsoft 365 / Azure AD
+  const MSAL_CONFIG = {
+    auth: {
+      clientId: "93517c07-8a51-4f4e-9e67-cec36fd3e1f4",
+      authority: "https://login.microsoftonline.com/dd50eef5-48e1-4a4a-99ab-d91ae68cb489",
+      redirectUri: window.location.origin + window.location.pathname
+    },
+    cache: {
+      cacheLocation: "sessionStorage",
+      storeAuthStateInCookie: false
+    }
+  };
+
+  const LOGIN_REQUEST = { scopes: ["User.Read"] };
+</script>
+
+<style>
+:root {
+  --bg: #faf8f5;
+  --ink: #0f0f10;
+  --ink-soft: #4a4a4d;
+  --line: #e8e3db;
+  --line-soft: #f0ebe2;
+  --accent: #2563eb;
+  --accent-soft: #eef2ff;
+  --danger: #dc2626;
+  --success: #16a34a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Geist', -apple-system, system-ui, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(91, 92, 245, 0.08), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(37, 99, 235, 0.06), transparent 60%);
+  z-index: 0;
+  pointer-events: none;
+}
+.shell {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 32px 96px;
+}
+@media (max-width: 600px) { .shell { padding: 24px 20px 64px; } }
+
+header { margin-bottom: 40px; }
+.brand { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+.brand-mark {
+  font-family: 'Fraunces', serif; font-weight: 600; font-size: 32px;
+  letter-spacing: -0.04em; color: var(--ink);
+}
+.brand-mark::first-letter { color: var(--accent); }
+.brand-divider { width: 1px; height: 18px; background: var(--line); }
+.brand-tag {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-soft); font-weight: 500;
+}
+h1 {
+  font-family: 'Fraunces', serif; font-weight: 500;
+  font-size: clamp(32px, 5vw, 44px); line-height: 1.05;
+  letter-spacing: -0.03em; margin-top: 32px; margin-bottom: 12px;
+}
+h1 em { font-style: italic; color: var(--accent); font-weight: 400; }
+.subtitle { color: var(--ink-soft); font-size: 15px; max-width: 480px; line-height: 1.5; }
+
+.user-badge {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; background: white;
+  border: 1px solid var(--line); border-radius: 12px;
+  margin-top: 32px; font-size: 14px;
+}
+.user-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #5b5cf5, #2563eb); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 14px; flex-shrink: 0;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-email { font-size: 12px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.logout-btn {
+  background: none; border: 1px solid var(--line); color: var(--ink-soft);
+  font-size: 12px; padding: 6px 12px; border-radius: 999px;
+  cursor: pointer; font-family: inherit; transition: background 0.15s;
+}
+.logout-btn:hover { background: var(--line-soft); }
+
+.login-card {
+  margin-top: 64px; padding: 48px 32px; background: white;
+  border: 1px solid var(--line); border-radius: 16px; text-align: center;
+}
+.login-icon {
+  width: 56px; height: 56px; margin: 0 auto 20px;
+  background: var(--accent-soft); color: var(--accent);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+.login-icon svg { width: 28px; height: 28px; }
+.login-title { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 500; margin-bottom: 8px; }
+.login-text { color: var(--ink-soft); font-size: 14px; margin-bottom: 32px; line-height: 1.5; }
+.ms-login-btn {
+  display: inline-flex; align-items: center; gap: 12px;
+  background: #2f2f2f; color: white; border: none;
+  padding: 12px 24px; border-radius: 8px;
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: background 0.15s;
+}
+.ms-login-btn:hover { background: #1a1a1a; }
+.ms-login-btn svg { width: 18px; height: 18px; }
+.login-error {
+  background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
+  font-size: 13px; padding: 12px 16px; border-radius: 8px; margin-top: 16px;
+}
+
+#main-form { display: none; margin-top: 32px; }
+.section { border-top: 1px solid var(--line); padding-top: 32px; margin-top: 32px; }
+.section:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+.section-label {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-soft); font-weight: 600; margin-bottom: 24px;
+  display: flex; align-items: center; gap: 12px;
+}
+.section-label::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+
+.field { margin-bottom: 22px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 500px) { .field-row { grid-template-columns: 1fr; gap: 0; } }
+
+label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; color: var(--ink); }
+label .req { color: var(--danger); margin-left: 3px; }
+label .hint { color: var(--ink-soft); font-weight: 400; font-size: 12px; margin-left: 6px; }
+
+input[type="text"], input[type="email"], input[type="tel"], textarea {
+  width: 100%; background: white; border: 1px solid var(--line);
+  border-radius: 8px; padding: 12px 14px; font-family: inherit;
+  font-size: 15px; color: var(--ink);
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+textarea { resize: vertical; min-height: 88px; font-family: inherit; }
+
+.address-wrap { position: relative; }
+.address-status { margin-top: 8px; font-size: 12px; display: flex; align-items: center; gap: 6px; min-height: 18px; }
+.address-status.pending { color: var(--ink-soft); }
+.address-status.confirmed { color: var(--success); font-weight: 500; }
+.address-status.error { color: var(--danger); }
+.address-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+
+.pac-container {
+  border-radius: 10px !important; border: 1px solid var(--line) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08) !important;
+  font-family: 'Geist', sans-serif !important; margin-top: 4px;
+}
+.pac-item { padding: 10px 14px !important; border-top-color: var(--line-soft) !important; font-size: 14px !important; cursor: pointer; }
+.pac-item:hover { background: var(--accent-soft) !important; }
+.pac-item-query { font-size: 14px !important; color: var(--ink) !important; }
+.pac-icon { display: none !important; }
+.pac-item::before { content: '📍'; margin-right: 8px; }
+
+.submit-row { margin-top: 48px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+button[type="submit"] {
+  background: var(--ink); color: white; border: none;
+  font-family: inherit; font-size: 15px; font-weight: 500;
+  padding: 14px 32px; border-radius: 999px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 10px;
+  transition: transform 0.12s ease, background 0.15s;
+}
+button[type="submit"]:hover:not(:disabled) { background: var(--accent); transform: translateY(-1px); }
+button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+button[type="submit"] svg { width: 14px; height: 14px; }
+.submit-hint { font-size: 12px; color: var(--ink-soft); }
+
+.result { margin-top: 32px; padding: 20px 24px; border-radius: 12px; display: none; animation: slide-up 0.3s ease; }
+.result.show { display: block; }
+.result.ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+.result.err { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+.result-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+.result-body { font-size: 13px; line-height: 1.5; }
+@keyframes slide-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+footer {
+  margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line);
+  font-size: 12px; color: var(--ink-soft);
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+footer em { font-family: 'Fraunces', serif; font-style: italic; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<header>
+  <div class="brand">
+    <span class="brand-mark">dupliriso</span>
+    <span class="brand-divider"></span>
+    <span class="brand-tag">Registro Interno</span>
+  </div>
+  <h1>Nueva <em>oportunidad</em></h1>
+  <p class="subtitle">Registra los datos del prospecto. La dirección debe seleccionarse del autocompletado para asignar correctamente al vendedor.</p>
+
+  <div class="user-badge" id="user-badge" style="display:none;">
+    <div class="user-avatar" id="user-avatar">?</div>
+    <div class="user-info">
+      <div class="user-name" id="user-name">—</div>
+      <div class="user-email" id="user-email">—</div>
+    </div>
+    <button class="logout-btn" id="logout-btn">Cerrar sesión</button>
+  </div>
+</header>
+
+<div class="login-card" id="login-card">
+  <div class="login-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  </div>
+  <div class="login-title">Acceso restringido</div>
+  <p class="login-text">Para registrar una oportunidad debes iniciar sesión<br>con tu cuenta de Microsoft 365 de Dupliriso.</p>
+  <button class="ms-login-btn" id="login-btn">
+    <svg viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="1" width="10" height="10" fill="#f25022"/>
+      <rect x="12" y="1" width="10" height="10" fill="#7fba00"/>
+      <rect x="1" y="12" width="10" height="10" fill="#00a4ef"/>
+      <rect x="12" y="12" width="10" height="10" fill="#ffb900"/>
+    </svg>
+    Iniciar sesión con Microsoft
+  </button>
+  <div class="login-error" id="login-error" style="display:none;"></div>
+</div>
+
+<form id="main-form" autocomplete="off">
+
+  <div class="section">
+    <div class="section-label">Datos del prospecto</div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="nombre">Nombre <span class="req">*</span></label>
+        <input type="text" id="nombre" name="nombre" required>
+      </div>
+      <div class="field">
+        <label for="apellido">Apellido</label>
+        <input type="text" id="apellido" name="apellido">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="empresa">Empresa</label>
+      <input type="text" id="empresa" name="empresa">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="telefono">Teléfono <span class="req">*</span></label>
+        <input type="tel" id="telefono" name="telefono" required>
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Ubicación del prospecto</div>
+    <div class="field">
+      <label for="direccion">
+        Dirección <span class="req">*</span>
+        <span class="hint">— escribe y selecciona del listado</span>
+      </label>
+      <div class="address-wrap">
+        <input type="text" id="direccion" name="direccion"
+          placeholder="Ej. Costa del Este, Calle 50, Obarrio..." required>
+        <div class="address-status pending" id="direccion-status">
+          Esperando que selecciones una dirección de la lista
+        </div>
+      </div>
+      <input type="hidden" id="direccion_formateada" name="direccion_formateada">
+      <input type="hidden" id="latitud" name="latitud">
+      <input type="hidden" id="longitud" name="longitud">
+      <input type="hidden" id="corregimiento" name="corregimiento">
+      <input type="hidden" id="distrito" name="distrito">
+      <input type="hidden" id="provincia" name="provincia">
+      <input type="hidden" id="place_id" name="place_id">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Detalles adicionales</div>
+    <div class="field">
+      <label for="mensaje">Notas o necesidad del cliente</label>
+      <textarea id="mensaje" name="mensaje"
+        placeholder="Ej. Interesado en duplicador con mantenimiento..."></textarea>
+    </div>
+  </div>
+
+  <div class="submit-row">
+    <button type="submit" id="submit-btn">
+      Registrar oportunidad
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M13 5l7 7-7 7"/>
+      </svg>
+    </button>
+    <span class="submit-hint">Se asignará automáticamente al vendedor de la zona</span>
+  </div>
+
+  <div class="result" id="result"></div>
+</form>
+
+<footer>
+  <span>Sistema interno · <em>Dupliriso</em></span>
+  <span>v3 · M365 + Autocompletado</span>
+</footer>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  MICROSOFT 365 AUTHENTICATION (MSAL)
+// ═══════════════════════════════════════════════════════════════
+const msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+let currentAccount = null;
+
+async function initAuth() {
+  try {
+    await msalInstance.initialize();
+    const response = await msalInstance.handleRedirectPromise();
+    if (response) {
+      currentAccount = response.account;
+      msalInstance.setActiveAccount(currentAccount);
+    } else {
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) {
+        currentAccount = accounts[0];
+        msalInstance.setActiveAccount(currentAccount);
+      }
+    }
+    if (currentAccount) showLoggedIn(); else showLoginScreen();
+  } catch (err) {
+    console.error("Error de auth:", err);
+    showLoginError(err.message);
+  }
+}
+
+async function loginWithMicrosoft() {
+  try { await msalInstance.loginRedirect(LOGIN_REQUEST); }
+  catch (err) { showLoginError(err.message); }
+}
+
+function logout() {
+  msalInstance.logoutRedirect({
+    postLogoutRedirectUri: window.location.origin + window.location.pathname
+  });
+}
+
+function showLoggedIn() {
+  document.getElementById('login-card').style.display = 'none';
+  document.getElementById('main-form').style.display = 'block';
+  document.getElementById('user-badge').style.display = 'flex';
+  const name = currentAccount.name || currentAccount.username;
+  const email = currentAccount.username;
+  const initials = name.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase();
+  document.getElementById('user-name').textContent = name;
+  document.getElementById('user-email').textContent = email;
+  document.getElementById('user-avatar').textContent = initials;
+}
+
+function showLoginScreen() {
+  document.getElementById('login-card').style.display = 'block';
+  document.getElementById('main-form').style.display = 'none';
+  document.getElementById('user-badge').style.display = 'none';
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = 'Error: ' + msg;
+  el.style.display = 'block';
+}
+
+document.getElementById('login-btn').addEventListener('click', loginWithMicrosoft);
+document.getElementById('logout-btn').addEventListener('click', logout);
+initAuth();
+
+// ═══════════════════════════════════════════════════════════════
+//  GOOGLE PLACES AUTOCOMPLETE
+// ═══════════════════════════════════════════════════════════════
+let autocomplete;
+let placeConfirmed = false;
+
+function initAutocomplete() {
+  const input = document.getElementById('direccion');
+  const statusEl = document.getElementById('direccion-status');
+
+  autocomplete = new google.maps.places.Autocomplete(input, {
+    componentRestrictions: { country: 'pa' },
+    fields: ['formatted_address', 'geometry.location', 'address_components', 'place_id', 'name']
+  });
+
+  autocomplete.addListener('place_changed', () => {
+    const place = autocomplete.getPlace();
+    if (!place.geometry || !place.geometry.location) {
+      placeConfirmed = false;
+      statusEl.className = 'address-status error';
+      statusEl.textContent = 'Esa dirección no fue reconocida. Intenta otra.';
+      return;
+    }
+
+    let corregimiento = '', distrito = '', provincia = '';
+    (place.address_components || []).forEach(c => {
+      if (c.types.includes('administrative_area_level_3')) corregimiento = c.long_name;
+      if (c.types.includes('administrative_area_level_2')) distrito = c.long_name;
+      if (c.types.includes('administrative_area_level_1')) provincia = c.long_name;
+      if (c.types.includes('locality') && !corregimiento) corregimiento = c.long_name;
+      if (c.types.includes('sublocality') && !corregimiento) corregimiento = c.long_name;
+      if (c.types.includes('neighborhood') && !corregimiento) corregimiento = c.long_name;
+    });
+
+    document.getElementById('direccion_formateada').value = place.formatted_address || '';
+    document.getElementById('latitud').value = place.geometry.location.lat();
+    document.getElementById('longitud').value = place.geometry.location.lng();
+    document.getElementById('corregimiento').value = corregimiento;
+    document.getElementById('distrito').value = distrito;
+    document.getElementById('provincia').value = provincia;
+    document.getElementById('place_id').value = place.place_id || '';
+
+    placeConfirmed = true;
+    statusEl.className = 'address-status confirmed';
+    const partes = [corregimiento, distrito, provincia].filter(Boolean).join(' · ');
+    statusEl.textContent = '✓ Confirmada' + (partes ? ' — ' + partes : '');
+  });
+
+  input.addEventListener('input', () => {
+    if (placeConfirmed) {
+      placeConfirmed = false;
+      statusEl.className = 'address-status pending';
+      statusEl.textContent = 'Esperando que selecciones una dirección de la lista';
+      ['direccion_formateada', 'latitud', 'longitud', 'corregimiento', 'distrito', 'provincia', 'place_id']
+        .forEach(id => document.getElementById(id).value = '');
+    }
+  });
+}
+
+(function loadGoogleMaps() {
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=places&callback=initAutocomplete&language=es&region=PA`;
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
+})();
+
+// ═══════════════════════════════════════════════════════════════
+//  SUBMIT
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('main-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const result = document.getElementById('result');
+  const submitBtn = document.getElementById('submit-btn');
+
+  if (!currentAccount) {
+    result.className = 'result err show';
+    result.innerHTML = `<div class="result-title">Sesión expirada</div>
+      <div class="result-body">Por favor cierra sesión y vuelve a iniciar.</div>`;
+    return;
+  }
+
+  if (!placeConfirmed) {
+    result.className = 'result err show';
+    result.innerHTML = `<div class="result-title">Dirección no confirmada</div>
+      <div class="result-body">Selecciona la dirección de las sugerencias que aparecen mientras escribes.</div>`;
+    document.getElementById('direccion').focus();
+    return;
+  }
+
+  const formData = new FormData(e.target);
+  const payload = {};
+  formData.forEach((value, key) => { payload[key] = value; });
+
+  payload.registrado_por_nombre = currentAccount.name || currentAccount.username;
+  payload.registrado_por_email = currentAccount.username;
+  payload.registrado_por_id = currentAccount.localAccountId || currentAccount.homeAccountId;
+  payload.fuente = 'formulario_interno';
+  payload.timestamp = new Date().toISOString();
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = 'Enviando...';
+  result.classList.remove('show');
+
+  try {
+    const response = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+
+    result.className = 'result ok show';
+    result.innerHTML = `<div class="result-title">✓ Oportunidad registrada</div>
+      <div class="result-body">El lead fue enviado al CRM y se asignará al vendedor de zona en segundos.<br>
+      <strong>Registrado por: ${payload.registrado_por_nombre}</strong></div>`;
+
+    e.target.reset();
+    placeConfirmed = false;
+    document.getElementById('direccion-status').className = 'address-status pending';
+    document.getElementById('direccion-status').textContent = 'Esperando que selecciones una dirección de la lista';
+    result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  } catch (err) {
+    result.className = 'result err show';
+    result.innerHTML = `<div class="result-title">No se pudo enviar</div>
+      <div class="result-body">Error: ${err.message}.</div>`;
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = `Registrar oportunidad <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>`;
+  }
+});
+</script>
+
+</body>
+</html>
