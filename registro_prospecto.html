@@ -314,6 +314,8 @@ footer em { font-family: 'Fraunces', serif; font-style: italic; }
       <input type="hidden" id="distrito" name="distrito">
       <input type="hidden" id="provincia" name="provincia">
       <input type="hidden" id="place_id" name="place_id">
+      <input type="hidden" id="place_name" name="place_name">
+      <input type="hidden" id="place_types" name="place_types">
     </div>
   </div>
 
@@ -425,7 +427,7 @@ function initAutocomplete() {
 
   autocomplete = new google.maps.places.Autocomplete(input, {
     componentRestrictions: { country: 'pa' },
-    fields: ['formatted_address', 'geometry.location', 'address_components', 'place_id', 'name']
+    fields: ['formatted_address', 'geometry.location', 'address_components', 'place_id', 'name', 'types']
   });
 
   autocomplete.addListener('place_changed', () => {
@@ -454,6 +456,8 @@ function initAutocomplete() {
     document.getElementById('distrito').value = distrito;
     document.getElementById('provincia').value = provincia;
     document.getElementById('place_id').value = place.place_id || '';
+    document.getElementById('place_name').value = place.name || '';
+    document.getElementById('place_types').value = (place.types || []).join(',');
 
     placeConfirmed = true;
     statusEl.className = 'address-status confirmed';
@@ -466,7 +470,7 @@ function initAutocomplete() {
       placeConfirmed = false;
       statusEl.className = 'address-status pending';
       statusEl.textContent = 'Esperando que selecciones una dirección de la lista';
-      ['direccion_formateada', 'latitud', 'longitud', 'corregimiento', 'distrito', 'provincia', 'place_id']
+      ['direccion_formateada', 'latitud', 'longitud', 'corregimiento', 'distrito', 'provincia', 'place_id', 'place_name', 'place_types']
         .forEach(id => document.getElementById(id).value = '');
     }
   });
